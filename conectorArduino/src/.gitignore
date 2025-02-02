@@ -1,0 +1,7 @@
+.env
+mydb.sql
+package.json
+package-lock.json
+server.js
+dbconector.js
+node_modules
