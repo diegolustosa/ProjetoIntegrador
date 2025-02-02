@@ -1,5 +1,4 @@
 .env
-mydb.sql
 package-lock.json
 server.js
 dbconector.js
