@@ -1,7 +1,35 @@
-const db = require('../dbconector'); 
+const db = require('../dbconector');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+require('dotenv').config();
+
+async function sendConfirmationEmail(email) {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const linkDeConfirmacao = ` https://4b6c-177-155-118-73.ngrok-free.app${email}`;
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Confirmação de Cadastro',
+    text: `Por favor, clique no link para confirmar seu cadastro: ${linkDeConfirmacao}`,
+  };
+
+  try {
+    console.log(process.env.EMAIL_USER);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('E-mail de confirmação enviado: ' + info.response);
+  } catch (error) {
+    console.error("Erro ao enviar e-mail de confirmação:", error);
+  }
+}
+
 
 module.exports = {
   // Cadastro de usuário
@@ -24,16 +52,17 @@ module.exports = {
       const hashedPassword = await bcrypt.hash(senha, salt);
 
       // Inserir o usuário no banco
-      await db('usuarios').insert({ email, senha: hashedPassword, eh_verificado: false });
+      await db('usuarios').insert({ usuario, email, senha: hashedPassword, eh_verificado: false });
 
-      // Enviar e-mail de confirmação
-      sendConfirmationEmail(email);
+       // Enviar e-mail de confirmação
+       sendConfirmationEmail(email);
 
       res.status(201).send({ msg: "Usuário cadastrado com sucesso. Verifique seu e-mail para ativação." });
     } catch (err) {
       res.status(500).send({ msg: `Erro ao cadastrar usuário: ${err.message}` });
     }
   },
+  
 
   // Login de usuário
   login: async (req, res) => {
@@ -56,7 +85,7 @@ module.exports = {
       }
 
       // Gerar um token JWT
-      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const token = jwt.sign({ id: user.id_usuarios }, "segredo", { expiresIn: '1h' });
       res.json({ token });
     } catch (err) {
       res.status(500).send({ msg: `Erro no login: ${err.message}` });
@@ -80,13 +109,44 @@ module.exports = {
       // Enviar e-mail de recuperação de senha
       sendPasswordResetEmail(email);
 
+      // Função para enviar e-mail de recuperação de senha
+      function sendPasswordResetEmail(email) {
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+
+        // Gerar token de recuperação com expiração de 1 hora
+        const resetToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        const resetLink = ` https://4b6c-177-155-118-73.ngrok-free.app${resetToken}`;
+
+        transporter.sendMail(mailOptions, (error, info) => {
+          if (error) {
+            console.log(error);
+          } else {
+            console.log('E-mail de recuperação enviado: ' + info.response);
+          }
+        });
+
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: 'Recuperação de Senha',
+          text: `Clique no link para redefinir sua senha: ${resetLink}`,
+        };
+      }
+
       res.json({ msg: "Instruções para recuperação de senha enviadas ao seu e-mail." });
     } catch (err) {
       res.status(500).send({ msg: `Erro ao enviar e-mail de recuperação: ${err.message}` });
     }
   },
 
-  
+
   consultar: async (req, res) => {
     try {
       const data = await db('usuarios').select('*');
@@ -109,12 +169,13 @@ module.exports = {
     }
   },
 
-  
+
   deletar: async (req, res) => {
     const { id } = req.params;
-
+    console.log(`O id Recebido eh: ${id}`);
     try {
-      await db('usuarios').where({ id }).del();
+      console.log(`O id Recebido eh: ${id}`);
+      await db('usuarios').where('id_usuarios', id).del();
       res.status(200).send({ msg: `Usuário ${id} deletado com sucesso` });
     } catch (err) {
       res.status(500).send({ msg: "Erro ao deletar usuário" });
@@ -122,59 +183,6 @@ module.exports = {
   }
 };
 
-// Função para enviar e-mail de confirmação após cadastro
-function sendConfirmationEmail(email) {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
 
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: 'Confirmação de Cadastro',
-    text: 'Por favor, clique no link para confirmar seu cadastro.',
-  };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-    } else {
-      console.log('E-mail de confirmação enviado: ' + info.response);
-    }
-  });
-}
 
-// Função para enviar e-mail de recuperação de senha
-function sendPasswordResetEmail(email) {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
-  // Gerar token de recuperação com expiração de 1 hora
-  const resetToken = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-  const resetLink = `http://seuapp.com/resetar-senha/${resetToken}`;
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: 'Recuperação de Senha',
-    text: `Clique no link para redefinir sua senha: ${resetLink}`,
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-    } else {
-      console.log('E-mail de recuperação enviado: ' + info.response);
-    }
-  });
-}

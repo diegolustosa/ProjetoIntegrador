@@ -1,4 +1,5 @@
 CREATE DATABASE gestao_usuarios;
+USE gestao_usuarios;
 CREATE TABLE usuarios (
   id_usuarios INT AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
