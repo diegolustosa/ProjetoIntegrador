@@ -5,7 +5,7 @@
       "src": "camadaFront/inside/frontenzo/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist"
+        "distDir": "dist"  
       }
     },
     {
@@ -13,14 +13,20 @@
       "use": "@vercel/node"
     }
   ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"  
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "conectorArduino/src/routes/$1"
+      "dest": "conectorArduino/src/routes/$1"  
     },
     {
       "src": "/(.*)",
-      "dest": "camadaFront/inside/frontenzo/dist/$1"
+      "dest": "camadaFront/inside/frontenzo/dist/$1"  
     }
   ]
 }
