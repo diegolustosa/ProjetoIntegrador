@@ -10,11 +10,11 @@ const Cadastro = () => {
   const navigate = useNavigate();
 
   // URL do backend 
-  const API_URL = 'http://localhost:5000/'; 
+  const API_URL = 'http://localhost:5000'; 
 
   const handleCadastro = async (e) => {
     e.preventDefault();
-
+    console.log("enviando");
     // Verifica se as senhas coincidem
     if (password !== confirmPassword) {
       alert('As senhas não coincidem!');
@@ -23,10 +23,11 @@ const Cadastro = () => {
 
     // Cria o objeto de dados a ser enviado ao backend
     const dados = { usuario: username, email, senha: password };
-
+    console.log(dados);
     try {
       // Envia os dados para o backend
-      const response = await fetch(`${API_URL}/cadastrar`, {
+      console.log({dados});
+      const response = await fetch(`${API_URL}/api/usuarios/cadastrar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
